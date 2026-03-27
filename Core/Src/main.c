@@ -67,8 +67,6 @@ uint8_t rxData[8];
 uint8_t txData[8];
 uint32_t txMailbox;
 
-uint32_t emusBaseID = 0x180;
-
 // volatile bool system_started = false;
 uint32_t last_voltage_send = 0;
 uint32_t last_capacity_send = 0;
@@ -314,6 +312,8 @@ void send_heinzmann_voltage_current(uint16_t packV, uint16_t termV, int16_t curr
 
 void send_heinzmann_capacity(uint16_t remCap, uint8_t soc, uint8_t soh, uint16_t fullCap, uint16_t cycles)
 {
+    txHeader.IDE = CAN_ID_EXT;
+    txHeader.RTR = CAN_RTR_DATA;
     txHeader.ExtId = HEINZ_CAPACITY_ID;
     txHeader.DLC = 8;
 
@@ -338,6 +338,8 @@ void send_heinzmann_capacity(uint16_t remCap, uint8_t soc, uint8_t soh, uint16_t
 
 void send_heinzmann_status(uint8_t statusByte, uint32_t dischargeMax, uint16_t chargeMax)
 {
+    txHeader.IDE = CAN_ID_EXT;
+    txHeader.RTR = CAN_RTR_DATA;
     txHeader.ExtId = HEINZ_STATUS_ID;
     txHeader.DLC = 8;
 
@@ -361,6 +363,8 @@ void send_heinzmann_status(uint8_t statusByte, uint32_t dischargeMax, uint16_t c
 
 void send_heinzmann_temperature(int16_t avgTemp, int16_t maxTemp, int16_t minTemp)
 {
+    txHeader.IDE = CAN_ID_EXT;
+    txHeader.RTR = CAN_RTR_DATA;
     txHeader.ExtId = HEINZ_TEMPS_ID;
     txHeader.DLC = 8;
 
@@ -383,6 +387,8 @@ void send_heinzmann_temperature(int16_t avgTemp, int16_t maxTemp, int16_t minTem
 
 void send_heinzmann_error(uint16_t errorCode)
 {
+    txHeader.IDE = CAN_ID_EXT;
+    txHeader.RTR = CAN_RTR_DATA;
     txHeader.ExtId = HEINZ_ERROR_ID;
     txHeader.DLC = 8;
 
@@ -412,6 +418,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     if (rxHeader.IDE == CAN_ID_STD) {
         switch (rxHeader.StdId) {
             case 0x180:
+            {
                 uint16_t voltage = (rxData[1] << 8) | rxData[0];
                 int16_t current = (int16_t)((rxData[3] << 8) | rxData[2]);
                 if ((int32_t)(now - last_voltage_send) >= 10) {
@@ -419,6 +426,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
                     last_voltage_send = now;
                 }
                 break;
+            }
 
             case 0x186:
                 emus_max_discharge_mA = ((rxData[5] << 8) | rxData[4]) * 100;
